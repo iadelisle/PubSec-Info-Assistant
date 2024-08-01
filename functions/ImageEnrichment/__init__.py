@@ -2,7 +2,6 @@ import json
 import logging
 import os
 
-import azure.ai.vision as visionsdk
 import azure.functions as func
 import requests
 from azure.storage.blob import BlobServiceClient
@@ -10,6 +9,7 @@ from shared_code.status_log import State, StatusClassification, StatusLog
 from shared_code.utilities import Utilities, MediaType
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
+import azure.ai.vision as visionsdk
 from datetime import datetime
 
 
@@ -30,6 +30,16 @@ azure_blob_content_storage_container = os.environ[
     "BLOB_STORAGE_ACCOUNT_OUTPUT_CONTAINER_NAME"
 ]
 azure_ai_translation_domain = os.environ["AZURE_AI_TRANSLATION_DOMAIN"]
+
+# OpenAI Endpoint and Key
+azure_openai_key = os.environ["AZURE_OPENAI_SERVICE_KEY"]
+azure_openai_endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
+azure_openai_model = os.environ["AZURE_OPENAI_MODEL"]
+azure_openai_deployment_id = os.environ["AZURE_OPENAI_DEPLOYMENT_ID"]
+azure_openai_api_version = os.environ["AZURE_OPENAI_API_VERSION"]
+prompt = os.environ["GPT4O_PROMPT"]
+aoai_headers = {"api-key": azure_openai_key}
+
 
 # Cosmos DB
 cosmosdb_url = os.environ["COSMOSDB_URL"]
@@ -57,12 +67,16 @@ API_TRANSLATE_ENDPOINT = (
         f"https://{azure_ai_translation_domain}/translate?api-version=3.0"
     )
 
+
 MAX_CHARS_FOR_DETECTION = 1000
 translator_api_headers = {
     "Ocp-Apim-Subscription-Key": cognitive_services_key,
     "Content-type": "application/json",
     "Ocp-Apim-Subscription-Region": cognitive_services_account_location,
 }
+
+
+
 
 # Vision SDK
 vision_service_options = visionsdk.VisionServiceOptions(
@@ -135,11 +149,56 @@ def translate_text(text, target_language):
     response = requests.post(
         API_TRANSLATE_ENDPOINT, headers=translator_api_headers, json=data, params=params
     )
+
     if response.status_code == 200:
         translated_content = response.json()[0]["translations"][0]["text"]
         return translated_content
     else:
         raise Exception(response.json())
+
+
+def submit_to_gpt4o(img_sas, prompt):
+
+    aoai_json = {
+    "messages": [
+        {
+            "role": "system",
+            "content": f"You are a FEMA expert who is tasked with identifying fallen debris and other hazards in the aftermath of a natural disaster. You are using a drone to survey the area and identify potential hazards. You are looking at the following image and need to identify any potential hazards. Please provide a detailed description of the hazards you see in the image.",
+        },
+        {
+            "role": "user",
+            "content": [
+	            {
+	                "type": "text",
+	                "text": f"{prompt}"
+	            },
+	            {
+	                "type": "image_url",
+	                "image_url": {
+                        "url":f"{img_sas}" 
+                    }
+                }
+           ] 
+        }
+    ],
+            "max_tokens": 100, 
+            "stream": False
+        }
+
+    logging.info(f'{azure_openai_endpoint}/openai/deployments/{azure_openai_deployment_id}/completions?api-version={azure_openai_api_version}')
+    
+    response = requests.post(f'{azure_openai_endpoint}/openai/deployments/{azure_openai_deployment_id}/completions?api-version={azure_openai_api_version}', headers=aoai_headers, json=aoai_json)
+
+    logging.info(response)
+
+    if response.status_code == 200:
+        return response.json()
+    
+
+def process_gpt4o_response(json_response):
+    logging.info(json_response)
+    text_resp = json_response['choices'][0]['message']['content']
+    return text_resp
 
 
 def main(msg: func.QueueMessage) -> None:
@@ -170,16 +229,31 @@ def main(msg: func.QueueMessage) -> None:
         # Run the image through the Computer Vision service
         file_name, file_extension, file_directory  = utilities.get_filename_and_extension(blob_path)
         blob_path_plus_sas = utilities.get_blob_and_sas(blob_path)
+        logging.info(blob_path_plus_sas)
 
         vision_source = visionsdk.VisionSource(url=blob_path_plus_sas)
         image_analyzer = visionsdk.ImageAnalyzer(
             vision_service_options, vision_source, analysis_options
         )
+
         result = image_analyzer.analyze()
 
         text_image_summary = ""
         index_content = ""
         complete_ocr_text = None
+
+        ## submit image to gpt-4o, get response, add to index ##
+
+        prompt = os.environ["GPT4O_PROMPT"]
+
+        gpt4o_result = submit_to_gpt4o(blob_path_plus_sas, prompt)
+        processed_gpt4o_response = process_gpt4o_response(gpt4o_result)
+
+        logging.info(process_gpt4o_response)
+
+        text_image_summary += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
+        index_content += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
+        logging.info(text_image_summary)
 
         if result.reason == visionsdk.ImageAnalysisResultReason.ANALYZED:
             if GPU_REGION:
@@ -336,6 +410,7 @@ def main(msg: func.QueueMessage) -> None:
 def index_section(index_content, file_name, file_directory, chunk_id, chunk_file, blob_path, blob_uri, tags):
     """ Pushes a batch of content to the search index
     """
+    ## TODO add gpt-4o response to index content ##
 
     index_chunk = {}
     batch = []
