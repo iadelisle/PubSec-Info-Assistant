@@ -175,6 +175,15 @@ class ChatReadRetrieveReadApproach(Approach):
         query_prompt=self.QUERY_PROMPT_TEMPLATE.format(query_term_language=self.query_term_language)
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
+        ## get context of current events from user query ##
+        ## e.g. search bing for user query and see what the current disasters are, or check the fema pages ##
+        ## Use these results to then search the FEMA manual to determine Standard operating procedure ##
+        ## take SOP combined with user query, generate search query and search against our search service ##
+        
+        
+        
+        
+        
         messages = self.get_messages_from_history(
             query_prompt,
             self.model_name,
