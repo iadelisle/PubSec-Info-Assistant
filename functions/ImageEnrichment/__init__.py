@@ -156,7 +156,9 @@ def translate_text(text, target_language):
     else:
         raise Exception(response.json())
 
+## Add function to estimate debris with categories of level
 
+## Change prompt -> app -> settings -> environment variables
 def submit_to_gpt4o(img_sas, prompt):
 
     aoai_json = {
