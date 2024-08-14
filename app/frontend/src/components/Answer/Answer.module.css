@@ -265,3 +265,9 @@ sup {
     align-items: center;
     flex-direction: column;
 }
+
+.customIcon {
+    width: 24px; /* Adjust width as necessary */
+    height: 24px; /* Adjust height as necessary */
+    vertical-align: middle; /* Align with text */
+}

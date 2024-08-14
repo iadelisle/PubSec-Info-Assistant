@@ -196,6 +196,9 @@ def submit_to_gpt4o(img_sas, prompt, system_message):
         return response.json()
     
 
+    ## structure your response object in the following format ##
+    ## <<<{"vegetative": True, "CND": True, "WhiteGoods": False}>>>}
+
 def process_gpt4o_response(json_response):
     logging.info(json_response)
     text_resp = json_response['choices'][0]['message']['content']
@@ -255,6 +258,9 @@ def main(msg: func.QueueMessage) -> None:
         text_image_summary += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
         index_content += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
         logging.info(text_image_summary)
+
+        
+
 
         if result.reason == visionsdk.ImageAnalysisResultReason.ANALYZED:
             if GPU_REGION:

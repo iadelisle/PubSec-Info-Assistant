@@ -212,3 +212,9 @@
         bottom: 8px;
     }
 }
+
+.customIcon {
+    width: 134px; /* Adjust width as necessary */
+    height: 128px; /* Adjust height as necessary */
+    vertical-align: middle; /* Align with text */
+}

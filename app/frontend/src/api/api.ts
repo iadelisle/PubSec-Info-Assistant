@@ -487,3 +487,25 @@ export async function getFeatureFlags(): Promise<GetFeatureFlagsResponse> {
     console.log(parsedResponse);
     return parsedResponse;
 }
+
+export const fetchAzureFunctionResponse = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_AZURE_FUNCTION_URL}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.REACT_APP_AUTH_TOKEN}`, // assuming you're using a Bearer token
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching from Azure Function:", error);
+      throw error;
+    }
+  };
+  
+  

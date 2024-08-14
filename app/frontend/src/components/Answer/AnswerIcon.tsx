@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 import { BuildingMultiple24Filled, Globe24Filled, Link20Filled, Sparkle24Filled } from "@fluentui/react-icons";
+
+import buildingImage from "../../assets/buildingImage.png"; // Adjust the path as necessary
 import { Approaches } from "../../api";
 
 import styles from "./Answer.module.css";

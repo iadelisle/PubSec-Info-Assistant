@@ -71,7 +71,7 @@ class ChatReadRetrieveReadApproach(Approach):
 
     QUERY_PROMPT_FEW_SHOTS = [
         {'role' : Approach.USER, 'content' : 'What are the future plans for public transportation development?' },
-        {'role' : Approach.ASSISTANT, 'content' : 'Future plans for public transportation' },
+        {'role' : Approach.ASSISTANT, 'content' : 'Future plans for public transportation'},
         {'role' : Approach.USER, 'content' : 'how much renewable energy was generated last year?' },
         {'role' : Approach.ASSISTANT, 'content' : 'Renewable energy generation last year' }
     ]
@@ -175,6 +175,15 @@ class ChatReadRetrieveReadApproach(Approach):
         query_prompt=self.QUERY_PROMPT_TEMPLATE.format(query_term_language=self.query_term_language)
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
+
+        ## get context of current events from user query ## 
+        ## e.g. search bing for user query and see what the disaster is ##
+        ## take the top 5 results and use them as context for the search query against ##
+        ## FEMA manual to determine Standard operating procedure ##
+        ## take SOP combined with user query, generate search query and search against our search service ## 
+
+
+
         messages = self.get_messages_from_history(
             query_prompt,
             self.model_name,
@@ -313,7 +322,7 @@ class ChatReadRetrieveReadApproach(Approach):
         else:
             content = "\n " + results_text
 
-        # STEP 3: Generate the prompt to be sent to the GPT model
+        # STEP 2: Generate the prompt to be sent to the GPT model
         follow_up_questions_prompt = (
             self.FOLLOW_UP_QUESTIONS_PROMPT_CONTENT
             if overrides.get("suggest_followup_questions")
