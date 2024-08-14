@@ -38,6 +38,7 @@ azure_openai_model = os.environ["AZURE_OPENAI_MODEL"]
 azure_openai_deployment_id = os.environ["AZURE_OPENAI_DEPLOYMENT_ID"]
 azure_openai_api_version = os.environ["AZURE_OPENAI_API_VERSION"]
 prompt = os.environ["GPT4O_PROMPT"]
+system_message = os.environ["GPT4O_SYSTEM_MESSAGE"]
 aoai_headers = {"api-key": azure_openai_key}
 
 
@@ -106,6 +107,7 @@ if cognitive_services_account_location in [
         | visionsdk.ImageAnalysisFeature.TEXT
         | visionsdk.ImageAnalysisFeature.TAGS
     )
+
 else:
     GPU_REGION = False
     analysis_options.features = (
@@ -158,15 +160,13 @@ def translate_text(text, target_language):
 
 ## Add function to estimate debris with categories of level
 
-## Change prompt -> app -> settings -> environment variables
-def submit_to_gpt4o(img_sas, prompt):
 
+def submit_to_gpt4o(img_sas, prompt, system_message):
     aoai_json = {
     "messages": [
         {
             "role": "system",
-            "content": f"You are a FEMA expert who is tasked with identifying fallen debris and other hazards in the aftermath of a natural disaster. You are using a drone to survey the area and identify potential hazards. You are looking at the following image and need to identify any potential hazards. Please provide a detailed description of the hazards you see in the image.",
-        },
+            "content": f'{system_message}'},
         {
             "role": "user",
             "content": [
@@ -196,6 +196,9 @@ def submit_to_gpt4o(img_sas, prompt):
     if response.status_code == 200:
         return response.json()
     
+
+    ## structure your response object in the following format ##
+    ## <<<{"vegetative": True, "CND": True, "WhiteGoods": False}>>>}
 
 def process_gpt4o_response(json_response):
     logging.info(json_response)
@@ -256,6 +259,9 @@ def main(msg: func.QueueMessage) -> None:
         text_image_summary += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
         index_content += f"{file_name} GPT-4o Response: {processed_gpt4o_response}\n"
         logging.info(text_image_summary)
+
+        
+
 
         if result.reason == visionsdk.ImageAnalysisResultReason.ANALYZED:
             if GPU_REGION:

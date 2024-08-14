@@ -19,6 +19,8 @@ import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
 import { InfoButton } from "../../components/InfoButton";
+import { DisastersButton } from "../../components/DisastersButton";
+
 import { ClearChatButton } from "../../components/ClearChatButton";
 import { ResponseLengthButtonGroup } from "../../components/ResponseLengthButtonGroup";
 import { ResponseTempButtonGroup } from "../../components/ResponseTempButtonGroup";
@@ -26,10 +28,14 @@ import { ChatModeButtonGroup } from "../../components/ChatModeButtonGroup";
 import { InfoContent } from "../../components/InfoContent/InfoContent";
 import { FolderPicker } from "../../components/FolderPicker";
 import { TagPickerInline } from "../../components/TagPicker";
+import { DisastersPanel } from '../../components/DisastersPanel'; // Adjust the path
+
 import React from "react";
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
+    const [isDisastersPanelOpen, setIsDisastersPanelOpen] = useState(false);
+
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
     const [retrieveCount, setRetrieveCount] = useState<number>(5);
     const [useSuggestFollowupQuestions, setUseSuggestFollowupQuestions] = useState<boolean>(false);
@@ -95,6 +101,7 @@ const Chat = () => {
         setIsLoading(true);
         setActiveCitation(undefined);
         setActiveAnalysisPanelTab(undefined);
+        // add current context of selected disaster here // 
 
         try {
             const history: ChatTurn[] = answers.map(a => ({ user: a[0], bot: a[1].answer }));
@@ -344,6 +351,7 @@ const Chat = () => {
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
                     <InfoButton className={styles.commandButton} onClick={() => setIsInfoPanelOpen(!isInfoPanelOpen)} />
+                    <DisastersButton className={styles.commandButton} onClick={() => setIsDisastersPanelOpen(!isDisastersPanelOpen)} />
                 </div>
             </div>
             <div className={styles.chatRoot}>
@@ -512,6 +520,13 @@ const Chat = () => {
                         </div>
                     }
                 </Panel>
+                
+
+                <DisastersPanel
+                isOpen={isDisastersPanelOpen}
+                onDismiss={() => setIsDisastersPanelOpen(false)}
+                />
+
 
                 <Panel
                     headerText="Information"

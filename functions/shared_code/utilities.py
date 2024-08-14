@@ -13,6 +13,7 @@ from shared_code.utilities_helper import UtilitiesHelper
 from nltk.tokenize import sent_tokenize
 import tiktoken
 import nltk
+
 # Try to download using nltk.download
 nltk.download('punkt')
 from bs4 import BeautifulSoup
