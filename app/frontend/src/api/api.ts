@@ -19,7 +19,7 @@ import { ChatResponse,
     getMaxCSVFileSizeType,
     } from "./models";
 
-export async function chatApi(options: ChatRequest, signal: AbortSignal): Promise<Response> {
+export async function chatApi(options: ChatRequest, signal: AbortSignal, currentSelectedDisaster: string): Promise<Response> {
     const response = await fetch("/chat", {
         method: "POST",
         headers: {
@@ -48,7 +48,8 @@ export async function chatApi(options: ChatRequest, signal: AbortSignal): Promis
                 selected_tags: options.overrides?.selectedTags
             },
             citation_lookup: options.citation_lookup,
-            thought_chain: options.thought_chain
+            thought_chain: options.thought_chain,
+            selectedDisaster: currentSelectedDisaster
         }),
         signal: signal
     });

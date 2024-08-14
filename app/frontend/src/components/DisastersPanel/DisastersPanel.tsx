@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Panel, DefaultButton, Label, Separator } from '@fluentui/react';
+import { Dialog, DefaultButton, Label, Separator, DialogFooter, DialogType, IconButton } from '@fluentui/react';
 import { fetchAzureFunctionResponse } from '../../api'; // Adjust the path to your API file
 import styles from '../../pages/chat/Chat.module.css';
 
@@ -8,7 +8,12 @@ interface Disaster {
     link: string;
 }
 
-export const DisastersPanel = ({ isOpen, onDismiss }: { isOpen: boolean, onDismiss: () => void }) => {
+const dialogContentProps = {
+    type: DialogType.largeHeader,
+    title: "Choose a disaster to investigate",
+  };
+
+export const DisastersPanel = ({ isOpen, onDismiss }: { isOpen: boolean, onDismiss: (selectedDisaster: string) => void }) => {
     const [disasters, setDisasters] = useState<Disaster[]>([]);
 
     useEffect(() => {
@@ -29,41 +34,50 @@ export const DisastersPanel = ({ isOpen, onDismiss }: { isOpen: boolean, onDismi
     }, [isOpen]);
 
     return (
-        <Panel
-            headerText="Disaster Information"
+        <Dialog
             isOpen={isOpen}
-            isBlocking={false}
-            onDismiss={onDismiss}
+            isBlocking={true}
             closeButtonAriaLabel="Close"
-            onRenderFooterContent={() => <DefaultButton onClick={onDismiss}>Close</DefaultButton>}
-            isFooterAtBottom={true}
+            dialogContentProps={dialogContentProps}
         >
-            <Separator>Disaster List</Separator>
             {disasters.length === 0 ? (
                 <Label>No disasters available</Label>
             ) : (
                 <table className={styles.disastersTable}>
-                    <thead>
+                    {/* <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Link</th>
+                            <th>Info</th>
                         </tr>
-                    </thead>
+                    </thead> */}
                     <tbody>
                         {disasters.map((disaster, index) => (
                             <tr key={index}>
                                 <td>{disaster.name}</td>
                                 <td>
-                                    <a href={disaster.link} target="_blank" rel="noopener noreferrer">
-                                        View Details
-                                    </a>
+                                    <IconButton
+                                        style={{ color: "black" }}
+                                        iconProps={{ iconName: "Info" }}
+                                        title="FEMA Details"
+                                        ariaLabel="FEMA Details"
+                                        onClick={() => window.open(disaster.link)}
+                                    />
+                                </td>
+                                <td>
+                                    <IconButton
+                                        style={{ color: "green" }}
+                                        iconProps={{ iconName: "Accept" }}
+                                        title="Pick this disaster"
+                                        ariaLabel="Pick this disaster"
+                                        onClick={() => onDismiss(disaster.name)}
+                                    />
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             )}
-        </Panel>
+        </Dialog>
     );
 };
 

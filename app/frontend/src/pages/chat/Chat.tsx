@@ -32,6 +32,8 @@ import { DisastersPanel } from '../../components/DisastersPanel'; // Adjust the 
 
 import React from "react";
 
+let currentSelectedDisaster = '';
+
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [isDisastersPanelOpen, setIsDisastersPanelOpen] = useState(false);
@@ -144,7 +146,8 @@ const Chat = () => {
             const controller = new AbortController();
             setAbortController(controller);
             const signal = controller.signal;
-            const result = await chatApi(request, signal);
+            // TODO: should move currentSelectedDisaster into request object instead of sending as separate parameter
+            const result = await chatApi(request, signal, currentSelectedDisaster);
             if (!result.body) {
                 throw Error("No response body");
             }
@@ -322,6 +325,7 @@ const Chat = () => {
     }
 
     useEffect(() => {
+        setIsDisastersPanelOpen(true);
         // Hide Scrollbar for this page
         document.body.classList.add('chat-overflow-hidden-body');
         // Do not apply to other pages
@@ -347,6 +351,7 @@ const Chat = () => {
         <div className={styles.container}>
             <div className={styles.subHeader}>
                 <ChatModeButtonGroup className="" defaultValue={activeChatMode} onClick={onChatModeChange} featureFlags={featureFlags} /> 
+                <h2>{currentSelectedDisaster!=''?currentSelectedDisaster:'Awaiting Selection'}</h2>
                 <div className={styles.commandsContainer}>
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
@@ -524,7 +529,12 @@ const Chat = () => {
 
                 <DisastersPanel
                 isOpen={isDisastersPanelOpen}
-                onDismiss={() => setIsDisastersPanelOpen(false)}
+                onDismiss={(selectedDisaster) => {
+                    setIsDisastersPanelOpen(false); 
+                    console.log("Selected: " + selectedDisaster);
+                    currentSelectedDisaster = selectedDisaster;
+                    // generateContext(currentSelectedDisaster);
+                }}
                 />
 
 
