@@ -26,6 +26,7 @@ from core.modelhelper import get_token_limit
 import requests
 
 aml_api_key = os.environ['AML_API_KEY']
+az_func_url = os.environ['AZ_FUNC_URL']
 
 class ChatReadRetrieveReadApproach(Approach):
     """Approach that uses a simple retrieve-then-read implementation, using the Azure AI Search and
@@ -87,26 +88,7 @@ class ChatReadRetrieveReadApproach(Approach):
     
     
 
-    structuredData = {'femaDeclarationString': 'DR-4806-FL',
-        'disasterNumber': 4806,
-        'state': 'FL',
-        'declarationType': 'DR',
-        'declarationDate': '2024-08-10T00:00:00.000Z',
-        'fyDeclared': 2024,
-        'incidentType': 'Tropical Storm',
-        'declarationTitle': 'HURRICANE DEBBY',
-        'incidentBeginDate': '2024-08-01T00:00:00.000Z',
-        'incidentEndDate': None,
-        'disasterCloseoutDate': None,
-        'fipsStateCode': '12',
-        'fipsCountyCode': '115',
-        'placeCode': '99115',
-        'designatedArea': 'Sarasota (County)',
-        'declarationRequestNumber': '24120',
-        'lastIAFilingDate': '2024-10-09T00:00:00.000Z',
-        'lastRefresh': '2024-08-11T01:01:52.722Z' }
-
-            
+    
     
     def __init__(
         self,
@@ -202,13 +184,14 @@ class ChatReadRetrieveReadApproach(Approach):
 
         try:
 
-            metadata = requests.get('http://localhost:7071/api/getFemaData?context="florida"')
+            metadata = requests.get(f'{az_func_url}')
 
         
             databody = metadata.json()
         except:
             print("Error in getting data")
-            return
+            
+
         
         data = databody[0]
         data['user_prompt'] = user_question
@@ -223,8 +206,30 @@ class ChatReadRetrieveReadApproach(Approach):
 
         # The azureml-model-deployment header will force the request to go to a specific deployment.
         # Remove this header to have the request observe the endpoint traffic rules
-        
-        headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ aml_api_key), 'azureml-model-deployment': 'ml-cce-debris-gbtvd-1' }
+
+        headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ aml_api_key), 'azureml-model-deployment': 'ml-cce-debris-gbtvd-1'}
+
+        structuredData = {'femaDeclarationString': 'DR-4806-FL',
+                'disasterNumber': 4806,
+                'state': 'FL',
+                'declarationType': 'DR',
+                'declarationDate': '2024-08-10T00:00:00.000Z',
+                'fyDeclared': 2024,
+                'incidentType': 'Tropical Storm',
+                'declarationTitle': 'HURRICANE DEBBY',
+                'incidentBeginDate': '2024-08-01T00:00:00.000Z',
+                'incidentEndDate': None,
+                'disasterCloseoutDate': None,
+                'fipsStateCode': '12',
+                'fipsCountyCode': '115',
+                'placeCode': '99115',
+                'designatedArea': 'Sarasota (County)',
+                'declarationRequestNumber': '24120',
+                'lastIAFilingDate': '2024-10-09T00:00:00.000Z',
+                'lastRefresh': '2024-08-11T01:01:52.722Z' }
+
+
+        body = structuredData
 
         req = urllib.request.Request(url, body, headers)
 
@@ -241,6 +246,7 @@ class ChatReadRetrieveReadApproach(Approach):
             print(error.read().decode("utf8", 'ignore'))
 
         
+        
 
 
         chat_completion = None
@@ -253,7 +259,7 @@ class ChatReadRetrieveReadApproach(Approach):
         tags_filter = overrides.get("selected_tags", "")
 
         user_q = 'Generate search query for: ' + history[-1]["user"]
-        thought_chain["work_query"] = user_q
+        thought_chain["work_query"] = user_q + result
 
         # Detect the language of the user's question
         detectedlanguage = self.detect_language(user_q)
@@ -262,6 +268,8 @@ class ChatReadRetrieveReadApproach(Approach):
             user_question = self.translate_response(user_q, self.target_translation_language)
         else:
             user_question = user_q
+
+        
 
         query_prompt=self.QUERY_PROMPT_TEMPLATE.format(query_term_language=self.query_term_language)
 
