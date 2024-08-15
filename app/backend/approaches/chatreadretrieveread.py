@@ -7,7 +7,7 @@ import logging
 import urllib.parse
 from datetime import datetime, timedelta
 from typing import Any, AsyncGenerator, Coroutine, Sequence
-
+import os
 import openai
 from openai import AzureOpenAI
 from openai import  AsyncAzureOpenAI
@@ -24,6 +24,8 @@ from azure.storage.blob import (
 from text import nonewlines
 from core.modelhelper import get_token_limit
 import requests
+
+aml_api_key = os.environ['AML_API_KEY']
 
 class ChatReadRetrieveReadApproach(Approach):
     """Approach that uses a simple retrieve-then-read implementation, using the Azure AI Search and
@@ -83,6 +85,28 @@ class ChatReadRetrieveReadApproach(Approach):
         {'role': Approach.ASSISTANT, 'content': 'Several steps are being taken to promote energy conservation including reducing energy consumption, increasing energy efficiency, and increasing the use of renewable energy sources.Citations[File0]'}
     ]
     
+    
+
+    structuredData = {'femaDeclarationString': 'DR-4806-FL',
+        'disasterNumber': 4806,
+        'state': 'FL',
+        'declarationType': 'DR',
+        'declarationDate': '2024-08-10T00:00:00.000Z',
+        'fyDeclared': 2024,
+        'incidentType': 'Tropical Storm',
+        'declarationTitle': 'HURRICANE DEBBY',
+        'incidentBeginDate': '2024-08-01T00:00:00.000Z',
+        'incidentEndDate': None,
+        'disasterCloseoutDate': None,
+        'fipsStateCode': '12',
+        'fipsCountyCode': '115',
+        'placeCode': '99115',
+        'designatedArea': 'Sarasota (County)',
+        'declarationRequestNumber': '24120',
+        'lastIAFilingDate': '2024-10-09T00:00:00.000Z',
+        'lastRefresh': '2024-08-11T01:01:52.722Z' }
+
+            
     
     def __init__(
         self,
@@ -151,6 +175,73 @@ class ChatReadRetrieveReadApproach(Approach):
         log = logging.getLogger("uvicorn")
         log.setLevel('DEBUG')
         log.propagate = True
+
+        ## lets go out and get the response from the promptflow first ##
+
+        import urllib.request
+        import json
+        import os
+        import ssl
+        import requests
+
+
+
+        def allowSelfSignedHttps(allowed):
+            # bypass the server certificate verification on client side
+            if allowed and not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
+                ssl._create_default_https_context = ssl._create_unverified_context
+
+        allowSelfSignedHttps(True) # this line is needed if you use self-signed certificate in your scoring service.
+
+        # Request data goes here
+        # The example below assumes JSON formatting which may be updated
+        # depending on the format your endpoint expects.
+        # More information can be found here:
+        # https://docs.microsoft.com/azure/machine-learning/how-to-deploy-advanced-entry-script
+
+
+        try:
+
+            metadata = requests.get('http://localhost:7071/api/getFemaData?context="florida"')
+
+        
+            databody = metadata.json()
+        except:
+            print("Error in getting data")
+            return
+        
+        data = databody[0]
+        data['user_prompt'] = user_question
+
+        body = str.encode(json.dumps(data))
+
+        url = 'https://ml-cce-debris-gbtvd.eastus.inference.ml.azure.com/score'
+
+        # Replace this with the primary/secondary key, AMLToken, or Microsoft Entra ID token for the endpoint
+        if not aml_api_key:
+            raise Exception("A key should be provided to invoke the endpoint")
+
+        # The azureml-model-deployment header will force the request to go to a specific deployment.
+        # Remove this header to have the request observe the endpoint traffic rules
+        
+        headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ aml_api_key), 'azureml-model-deployment': 'ml-cce-debris-gbtvd-1' }
+
+        req = urllib.request.Request(url, body, headers)
+
+        try:
+            response = urllib.request.urlopen(req)
+
+            result = response.read()
+            print(result)
+        except urllib.error.HTTPError as error:
+            print("The request failed with status code: " + str(error.code))
+
+            # Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
+            print(error.info())
+            print(error.read().decode("utf8", 'ignore'))
+
+        
+
 
         chat_completion = None
         use_semantic_captions = True if overrides.get("semantic_captions") else False
