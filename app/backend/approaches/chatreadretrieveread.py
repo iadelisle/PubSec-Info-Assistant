@@ -231,6 +231,11 @@ class ChatReadRetrieveReadApproach(Approach):
 
         body = structuredData
 
+
+        body['user_prompt'] = user_question
+        body = str.encode(json.dumps(structuredData))
+
+        
         req = urllib.request.Request(url, body, headers)
 
         try:
@@ -245,7 +250,6 @@ class ChatReadRetrieveReadApproach(Approach):
             print(error.info())
             print(error.read().decode("utf8", 'ignore'))
 
-        
         
 
 
