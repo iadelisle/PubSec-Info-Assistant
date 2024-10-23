@@ -45,11 +45,11 @@ export async function chatApi(options: ChatRequest, signal: AbortSignal, current
                 response_length: options.overrides?.responseLength,
                 response_temp: options.overrides?.responseTemp,
                 selected_folders: options.overrides?.selectedFolders,
-                selected_tags: options.overrides?.selectedTags
+                selected_tags: options.overrides?.selectedTags,
+                selectedDisaster: options.currentSelectedDisaster
             },
             citation_lookup: options.citation_lookup,
             thought_chain: options.thought_chain,
-            selectedDisaster: currentSelectedDisaster
         }),
         signal: signal
     });
