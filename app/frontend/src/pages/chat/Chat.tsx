@@ -92,7 +92,8 @@ const Chat = () => {
     const makeApiRequest = async (question: string, approach: Approaches, 
                                 work_citation_lookup: { [key: string]: { citation: string; source_path: string; page_number: string } },
                                 web_citation_lookup: { [key: string]: { citation: string; source_path: string; page_number: string } },
-                                thought_chain: { [key: string]: string}) => {
+                                thought_chain: { [key: string]: string},
+                                 current_disaster: {[key: string]: string}) => {
         lastQuestionRef.current = question;
         lastQuestionWorkCitationRef.current = work_citation_lookup;
         lastQuestionWebCitiationRef.current = web_citation_lookup;
@@ -104,7 +105,7 @@ const Chat = () => {
         setActiveCitation(undefined);
         setActiveAnalysisPanelTab(undefined);
         // add current context of selected disaster here // 
-
+        
         try {
             const history: ChatTurn[] = answers.map(a => ({ user: a[0], bot: a[1].answer }));
             const request: ChatRequest = {
@@ -123,7 +124,8 @@ const Chat = () => {
                     responseLength: responseLength,
                     responseTemp: responseTemp,
                     selectedFolders: selectedFolders.includes("selectAll") ? "All" : selectedFolders.length == 0 ? "All" : selectedFolders.join(","),
-                    selectedTags: selectedTags.map(tag => tag.name).join(",")
+                    selectedTags: selectedTags.map(tag => tag.name).join(","),
+                    currentDisaster: current_disaster
                 },
                 citation_lookup: approach == Approaches.CompareWebWithWork ? web_citation_lookup : approach == Approaches.CompareWorkWithWeb ? work_citation_lookup : {},
                 thought_chain: thought_chain
