@@ -125,7 +125,7 @@ const Chat = () => {
                     responseTemp: responseTemp,
                     selectedFolders: selectedFolders.includes("selectAll") ? "All" : selectedFolders.length == 0 ? "All" : selectedFolders.join(","),
                     selectedTags: selectedTags.map(tag => tag.name).join(","),
-                    currentDisaster: current_disaster
+                    currentDisaster: currentSelectedDisaster
                 },
                 citation_lookup: approach == Approaches.CompareWebWithWork ? web_citation_lookup : approach == Approaches.CompareWorkWithWeb ? work_citation_lookup : {},
                 thought_chain: thought_chain
@@ -149,7 +149,7 @@ const Chat = () => {
             setAbortController(controller);
             const signal = controller.signal;
             // TODO: should move currentSelectedDisaster into request object instead of sending as separate parameter
-            const result = await chatApi(request, signal, currentSelectedDisaster);
+            const result = await chatApi(request, signal);
             if (!result.body) {
                 throw Error("No response body");
             }
